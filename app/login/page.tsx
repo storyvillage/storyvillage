@@ -39,18 +39,22 @@ function LoginForm() {
   };
 
   const handleSocialLogin = async (provider: 'google' | 'kakao') => {
+    // ✅ 돌아올 주소를 더 안전하게 만듭니다.
     const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
     
-    await supabase.auth.signInWithOAuth({ 
+    const { error } = await supabase.auth.signInWithOAuth({ 
       provider, 
       options: { 
         redirectTo: redirectUrl,
-        // ✅ prompt: 'consent' 삭제! 이제 귀찮게 안 물어봅니다.
-        queryParams: {
-          access_type: 'offline',
-        },
+        // ✅ 카카오일 때만 이메일 요청을 빼고 '닉네임, 사진'만 요청하도록 설정합니다.
+        queryParams: provider === 'kakao' ? { scope: 'profile_nickname,profile_image' } : undefined,
       } 
     });
+
+    if (error) {
+      alert(`${provider === 'kakao' ? '카카오' : '구글'} 로그인 중 오류가 발생했습니다.`);
+      console.error(error);
+    }
   };
 
   return (
