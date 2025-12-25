@@ -67,8 +67,15 @@ export default function SearchPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const tags = useMemo(() => parseTagsParam(sp.get('tags')), [sp]);
-  const taste = useMemo(() => tasteFromSearchParams(new URLSearchParams(sp.toString())), [sp]);
+  const tags = useMemo(() => {
+  const p = sp.get('tags');
+  return p ? decodeURIComponent(String(p)).split(',').filter(Boolean) : [];
+}, [sp]);
+
+const taste = useMemo(() => ({
+  tags,
+  ...NEUTRAL_TASTE
+}), [tags]);
 
   const [works, setWorks] = useState<Work[]>([]);
   const [loading, setLoading] = useState(true);
