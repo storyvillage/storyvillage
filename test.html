@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스토리빌리지 2.0 시안</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* 전광판 애니메이션 */
+    @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+    .animate-ticker { animation: ticker 15s linear infinite; }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+
+  <header class="text-center pt-16 pb-8">
+    <h1 class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-yellow-500 to-purple-500 cursor-pointer hover:animate-bounce">
+      StoryVillage
+    </h1>
+    <p class="text-gray-500 font-bold text-xl mt-2">오늘 당신이 읽을 맛을 찾아드립니다.</p>
+  </header>
+
+  <div class="bg-indigo-600 text-white py-2 overflow-hidden whitespace-nowrap relative mb-8">
+    <div class="animate-ticker inline-block font-bold text-sm">
+      💬 [주민 추천] 와... 이 소설은 진짜 전설이다. 밤새 읽느라 눈 빠질 뻔... (by 김덕후 주민) &nbsp;&nbsp;&nbsp; 💬 [주민 추천] 로맨스 없는 줄 알았는데 브로맨스 맛집이네;; (by 현판조아 주민)
+    </div>
+  </div>
+
+  <main class="max-w-3xl mx-auto px-4 pb-24 space-y-12">
+    <section class="text-center relative z-10">
+      <div class="relative mb-8 max-w-xl mx-auto">
+        <input type="text" placeholder="작품 제목, 작가로 검색..." class="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-full shadow-xl text-lg outline-none focus:border-indigo-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 absolute left-4 top-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex flex-wrap justify-center gap-2">
+          <span class="text-xs font-bold text-gray-500 py-2">[장르/배경]</span>
+          <button class="px-4 py-1.5 rounded-full text-xs font-black border-2 bg-indigo-600 text-white border-indigo-600 shadow-md">#무협</button> <button class="px-4 py-1.5 rounded-full text-xs font-black border-2 bg-white text-gray-400 border-gray-100">#판타지</button>
+          <button class="px-4 py-1.5 rounded-full text-xs font-black border-2 bg-white text-gray-400 border-gray-100">#현판</button>
+        </div>
+        <div class="flex flex-wrap justify-center gap-2">
+          <span class="text-xs font-bold text-gray-500 py-2">[맛/분위기]</span>
+          <button class="px-4 py-1.5 rounded-full text-xs font-black border-2 bg-indigo-600 text-white border-indigo-600 shadow-md">#사이다</button> <button class="px-4 py-1.5 rounded-full text-xs font-black border-2 bg-indigo-600 text-white border-indigo-600 shadow-md">#먼치킨</button> <button class="px-4 py-1.5 rounded-full text-xs font-black border-2 bg-white text-gray-400 border-gray-100">#착각계</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-2 gap-4">
+      <div class="bg-red-50 border-2 border-red-100 p-6 rounded-3xl flex items-center justify-between cursor-pointer hover:shadow-lg transition-all">
+        <h3 class="font-black text-red-600">🎁 오늘의 무료 혜택</h3>
+        <span class="text-xs font-bold bg-white px-2 py-1 rounded text-red-400">이벤트 Go</span>
+      </div>
+      <div class="bg-purple-50 border-2 border-purple-100 p-6 rounded-3xl flex items-center justify-between cursor-pointer hover:shadow-lg transition-all">
+        <h3 class="font-black text-purple-600">🔒 촌장님의 숨은 명작</h3>
+        <span class="text-xs font-bold bg-white px-2 py-1 rounded text-purple-400">숨읽명 Go</span>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-black mb-6 flex items-center gap-2">
+        🔍 촌장님의 취향 저격 결과 <span class="text-indigo-600 text-base">(3개 발견!)</span>
+      </h2>
+      <div class="space-y-2">
+        <div class="flex items-center gap-4 p-4 border-b border-gray-100 hover:bg-indigo-50/30 rounded-2xl transition-all">
+          <span class="text-2xl font-black text-indigo-600">1</span>
+          <div class="flex-1">
+            <h3 class="text-lg font-black">나 혼자만 레벨업</h3>
+            <div class="flex gap-1 mt-1">
+              <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">#무협(헌터)</span>
+              <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">#사이다</span>
+              <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">#먼치킨</span>
+            </div>
+          </div>
+          <button class="bg-gray-900 text-white text-xs font-black px-4 py-2 rounded-xl hover:bg-indigo-600">보러가기</button>
+        </div>
+        </div>
+    </section>
+  </main>
+
+</body>
+</html>
