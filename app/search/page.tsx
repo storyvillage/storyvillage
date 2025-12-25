@@ -32,14 +32,17 @@ function normalizeWork(row: any): Work {
   
   const s = row.stats || {};
   
-  // ✅ 5대 성분
-  const adminTaste: Taste = {
-    cider: Number(s.cider ?? row.admin_cider ?? 50),
-    pace: Number(s.pace ?? row.admin_pace ?? 50),
-    dark: Number(s.mood ?? row.admin_dark ?? 50),
-    romance: Number(s.romance ?? row.admin_romance ?? 50),
-    probability: Number(s.probability ?? row.admin_probability ?? 50),
-  };
+  
+  // ✅ 36번 줄 근처의 adminTaste 부분을 이렇게 바꾸세요
+const adminTaste: Taste = {
+  cider: Number(s.cider ?? row.admin_cider ?? 50),
+  pace: Number(s.pace ?? row.admin_pace ?? 50),
+  dark: Number(s.mood ?? row.admin_dark ?? 50),
+  romance: Number(s.romance ?? row.admin_romance ?? 50),
+  probability: Number(s.probability ?? row.admin_probability ?? 50), // 추가
+  character: Number(s.character ?? row.admin_character ?? 50), // 추가
+  growth: Number(s.growth ?? row.admin_growth ?? 50), // 추가
+};
   
   const nVotes = Number(row?.n_votes ?? 0) || 0;
   const avgDiff = Number(row?.avg_diff ?? 0) || 0;
