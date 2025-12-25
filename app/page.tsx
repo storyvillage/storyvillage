@@ -55,14 +55,19 @@ function normalizeWork(row: any): Work {
   };
 }
 
-function todayISODateKR() {
-  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' });
-  return fmt.format(new Date());
-}
+// --- [슬라이더 설정] ---
+const SLIDER_CONFIG = [
+  { key: 'cider', left: '🍠 고구마', right: '🥤 사이다', color: 'accent-indigo-600' },
+  { key: 'pace', left: '🐢 느림', right: '⚡ 빠름', color: 'accent-blue-600' },
+  { key: 'dark', left: '☀️ 힐링', right: '🌑 피폐', color: 'accent-gray-600' },
+  { key: 'romance', left: '🌵 노맨스', right: '💖 로맨스', color: 'accent-pink-600' },
+  { key: 'probability', left: '⚡ 극적허용', right: '🧠 개연성', color: 'accent-purple-600' },
+  { key: 'character', left: '😇 선함', right: '😈 악당', color: 'accent-red-600' },
+  { key: 'growth', left: '👶 성장', right: '👑 완성', color: 'accent-yellow-600' },
+];
 
 export default function Home() {
   const router = useRouter();
-  
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // --- [상태 관리] ---
@@ -177,10 +182,6 @@ export default function Home() {
     setIsSliderOpen(false);
   };
 
-  const removeLastTag = () => {
-    setUiTags(prev => prev.slice(0, -1));
-  };
-
   const applyPreset = () => {
     if (!preset) return;
     setUiSliders(prev => applyDelta(prev, preset.delta));
@@ -206,8 +207,6 @@ export default function Home() {
     setAppliedTags(uiTags);
     setAppliedSliders(uiSliders);
     setAppliedSearchTerm(uiSearchTerm);
-    console.log("🔍 검색 실행 & 로그 저장:", { tags: uiTags, sliders: uiSliders });
-    
     setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -246,16 +245,6 @@ export default function Home() {
            uiSearchTerm !== appliedSearchTerm;
   }, [uiTags, uiSliders, uiSearchTerm, appliedTags, appliedSliders, appliedSearchTerm]);
 
-  const sliderConfig = [
-    { key: 'cider', left: '🍠 고구마', right: '🥤 사이다', color: 'accent-indigo-600' },
-    { key: 'pace', left: '🐢 느림', right: '⚡ 빠름', color: 'accent-blue-600' },
-    { key: 'dark', left: '☀️ 힐링', right: '🌑 피폐', color: 'accent-gray-600' },
-    { key: 'romance', left: '🌵 노맨스', right: '💖 로맨스', color: 'accent-pink-600' },
-    { key: 'probability', left: '⚡ 극적허용', right: '🧠 개연성', color: 'accent-purple-600' },
-    { key: 'character', left: '😇 선함', right: '😈 악당', color: 'accent-red-600' },
-    { key: 'growth', left: '👶 성장', right: '👑 완성', color: 'accent-yellow-600' },
-  ];
-
   return (
     <div className="min-h-screen bg-white pb-32">
       <style jsx>{`
@@ -277,26 +266,26 @@ export default function Home() {
             {user ? (
               <div className="flex items-center gap-2 bg-indigo-50 px-2 py-1 md:px-3 md:py-1.5 rounded-full border border-indigo-100 shadow-sm transition-all hover:bg-indigo-100">
                 <div onClick={() => router.push('/my')} className="flex items-center gap-2 cursor-pointer group">
-                  <span className={`text-[9px] font-black text-white px-1.5 py-0.5 rounded-md transition-colors ${profile?.level >= 9 ? 'bg-purple-600' : 'bg-indigo-600 group-hover:bg-indigo-700'}`}>
+                  <span className={`text-xs font-black text-white px-2 py-0.5 rounded-md transition-colors ${profile?.level >= 9 ? 'bg-purple-600' : 'bg-indigo-600 group-hover:bg-indigo-700'}`}>
                     LV.{profile?.level || 1}
                   </span>
                   
                   <div className="hidden md:flex flex-col">
-                    <span className="text-[11px] font-black text-indigo-700 leading-tight group-hover:underline">
+                    <span className="text-[13px] font-black text-indigo-700 leading-tight group-hover:underline">
                       {getLevelName(profile?.level || 1)}
                     </span>
-                    <span className="text-[9px] font-bold text-indigo-300">
+                    <span className="text-xs font-bold text-indigo-300">
                       {profile?.nickname || '주민'} · {profile?.points || 0}P
                     </span>
                   </div>
 
-                  <span className="md:hidden text-[10px] font-black text-indigo-700 max-w-[60px] truncate">
+                  <span className="md:hidden text-xs font-black text-indigo-700 max-w-[60px] truncate">
                     {profile?.nickname || '주민'}
                   </span>
                 </div>
 
                 {profile?.level >= 9 && (
-                  <button onClick={() => router.push('/admin')} className="flex items-center gap-1 px-2 py-1 bg-gray-900 text-white rounded-md text-[9px] font-black hover:bg-gray-700 transition-colors">
+                  <button onClick={() => router.push('/admin')} className="flex items-center gap-1 px-2 py-1 bg-gray-900 text-white rounded-md text-[10px] font-black hover:bg-gray-700 transition-colors">
                     <Crown size={10} /> <span className="hidden md:inline">관리</span>
                   </button>
                 )}
@@ -305,7 +294,7 @@ export default function Home() {
                 
                 <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-all flex items-center">
                   <LogOut size={16} className="md:hidden" /> 
-                  <span className="hidden md:block text-[10px] font-bold">퇴장</span>
+                  <span className="hidden md:block text-xs font-bold">퇴장</span>
                 </button>
               </div>
             ) : (
@@ -323,7 +312,7 @@ export default function Home() {
               <h2 className="text-2xl font-black text-gray-900 leading-tight">
                 <span className="text-indigo-600">웹소설.</span> 줄거리 말고, 취향으로.
               </h2>
-              <p className="text-xs font-medium text-gray-500 mt-1">태그로 골라서 바로 찾기 (1개도 OK)</p>
+              <p className="text-sm font-medium text-gray-500 mt-1">태그로 골라서 바로 찾기 (1개도 OK)</p>
             </div>
             
             <div className="grid grid-cols-4 gap-1.5 w-full md:w-auto">
@@ -336,19 +325,19 @@ export default function Home() {
                   }
                   router.push('/dna');
                 }}
-                className="flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-bold hover:bg-indigo-100 transition-colors text-center"
+                className="flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors text-center"
               >
                 <Map size={14} /> <span>DNA</span>
               </button>
 
-              <button onClick={applyQuest} className="flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold hover:bg-purple-100 transition-colors relative overflow-hidden text-center">
+              <button onClick={applyQuest} className="flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-100 transition-colors relative overflow-hidden text-center">
                 <Zap size={14} /> <span>오늘의 퀘스트</span>
                 {quest && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
               </button>
-              <button onClick={() => setIsRadarOpen(!isRadarOpen)} className={`flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 rounded-lg text-[10px] font-bold transition-colors text-center ${isRadarOpen ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              <button onClick={() => setIsRadarOpen(!isRadarOpen)} className={`flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 rounded-lg text-xs font-bold transition-colors text-center ${isRadarOpen ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
                 <Radar size={14} /> <span>숨은명작</span>
               </button>
-              <Link href="/secret" className="flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 bg-gray-50 text-gray-600 rounded-lg text-[10px] font-bold hover:bg-gray-100 transition-colors text-center">
+              <Link href="/secret" className="flex flex-col md:flex-row items-center justify-center gap-1 px-1 py-2 bg-gray-50 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors text-center">
                 <Ghost size={14} /> <span>숨읽명</span>
               </Link>
             </div>
@@ -357,14 +346,14 @@ export default function Home() {
           {isRadarOpen && (
             <div className="mb-6 bg-gray-900 rounded-xl p-4 text-white shadow-xl animate-in slide-in-from-top-2">
               <div className="flex justify-between items-center mb-2">
-                 <div className="text-xs font-bold text-gray-400 flex items-center gap-1"><Radar size={12}/> 사람들이 찾았지만 없었던 맛</div>
-                 <button onClick={() => setIsRadarOpen(false)} className="text-gray-500 hover:text-white"><X size={16}/></button>
+                 <div className="text-sm font-bold text-gray-400 flex items-center gap-1"><Radar size={14}/> 사람들이 찾았지만 없었던 맛</div>
+                 <button onClick={() => setIsRadarOpen(false)} className="text-gray-500 hover:text-white"><X size={18}/></button>
               </div>
               <div className="space-y-2">
                  {radar.length === 0 ? <div className="text-xs text-gray-500 py-1">아직 데이터가 부족해요.</div> : radar.map(r => (
                    <div key={r.id} className="flex justify-between items-center bg-gray-800 p-2 rounded-lg border border-gray-700">
                      <span className="text-xs font-bold truncate text-gray-200">{r.tags.map(t=>`#${t}`).join(' ')}</span>
-                     <button onClick={() => router.push(`/add?prefill_tags=${encodeURIComponent(r.tags.join(','))}`)} className="text-[10px] px-2 py-1 bg-indigo-600 rounded-md font-bold hover:bg-indigo-500 transition-colors">내가 채울래!</button>
+                     <button onClick={() => router.push(`/add?prefill_tags=${encodeURIComponent(r.tags.join(','))}`)} className="text-xs px-2 py-1 bg-indigo-600 rounded-md font-bold hover:bg-indigo-500 transition-colors">내가 채울래!</button>
                    </div>
                  ))}
               </div>
@@ -375,29 +364,32 @@ export default function Home() {
             <div className="mb-4 animate-in slide-in-from-top-2 fade-in duration-300">
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center">
                 <div>
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-500 mb-0.5"><Zap size={12}/> 추천 조합</div>
-                  <div className="font-black text-xs text-indigo-900">{preset.label}</div>
+                  <div className="flex items-center gap-1 text-xs font-bold text-indigo-500 mb-0.5"><Zap size={14}/> 추천 조합</div>
+                  <div className="font-black text-sm text-indigo-900">{preset.label}</div>
                 </div>
-                <button onClick={applyPreset} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-black text-[10px] shadow-md hover:bg-indigo-700 transition-colors">적용하기</button>
+                <button onClick={applyPreset} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-black text-xs shadow-md hover:bg-indigo-700 transition-colors">적용하기</button>
               </div>
             </div>
           )}
 
           <div className="mb-2">
-            <div className="flex flex-wrap items-end gap-3 mb-3">
+            {/* 🔥 수정: gap-3 -> gap-2로 줄여서 모바일 한 줄 정렬 공간 확보 */}
+            <div className="flex flex-wrap items-end gap-2 mb-3">
               <div>
                 <span className="text-sm font-black text-gray-800 flex items-center gap-1"><Filter size={16}/> 오늘 땡기는 맛</span>
-                <p className="text-[10px] text-gray-400 font-bold mt-0.5 ml-0.5">여러 개면 더 정확해요!</p>
+                <p className="text-xs text-gray-400 font-bold mt-0.5 ml-0.5">여러 개면 더 정확해요!</p>
               </div>
               
               <div className="flex gap-2">
-                <button onClick={pickRandomTag} className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-md text-[10px] font-black flex items-center gap-1 hover:bg-indigo-200 transition-all border border-indigo-200">
-                  <Dices size={12}/> 🎲 랜덤 조합
+                {/* 🔥 수정: 주사위 이모지 제거 & whitespace-nowrap 추가 */}
+                <button onClick={pickRandomTag} className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-md text-xs font-black flex items-center gap-1 hover:bg-indigo-200 transition-all border border-indigo-200 whitespace-nowrap">
+                  <Dices size={12}/> 랜덤 조합
                 </button>
 
+                {/* 🔥 수정: w-24 제거 (폭 유동적) & whitespace-nowrap 추가 (줄바꿈 방지) */}
                 <button 
                   onClick={() => setIsSliderOpen(!isSliderOpen)} 
-                  className={`px-3 py-1.5 w-24 rounded-md text-[10px] font-black flex items-center justify-center gap-1 transition-all border ${isSliderOpen ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-black flex items-center justify-center gap-1 transition-all border whitespace-nowrap ${isSliderOpen ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
                 >
                   <SlidersHorizontal size={12} />
                   {isSliderOpen ? '접기' : '디테일 설정'}
@@ -410,12 +402,12 @@ export default function Home() {
               <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-in slide-in-from-top-2 fade-in">
                 <div className="flex justify-between items-center mb-2">
                    <h4 className="text-xs font-black text-gray-700 flex items-center gap-1"><SlidersHorizontal size={14}/> 7대 성분 미세 조정</h4>
-                   <button onClick={() => setUiSliders(NEUTRAL_TASTE)} className="text-[10px] text-gray-400 font-bold underline hover:text-indigo-500">초기화</button>
+                   <button onClick={() => setUiSliders(NEUTRAL_TASTE)} className="text-xs text-gray-400 font-bold underline hover:text-indigo-500">초기화</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                  {sliderConfig.map((s) => (
+                  {SLIDER_CONFIG.map((s) => (
                     <div key={s.key}>
-                      <div className="flex justify-between text-[10px] font-bold text-gray-500 mb-1">
+                      <div className="flex justify-between text-xs font-bold text-gray-500 mb-1">
                         <span>{s.left}</span>
                         <span className="text-indigo-600">{uiSliders[s.key as keyof Taste] ?? 50}%</span>
                         <span>{s.right}</span>
@@ -428,14 +420,14 @@ export default function Home() {
             )}
             
             <div className="mb-3">
-              <h4 className="text-[10px] font-black text-indigo-500 mb-1.5 uppercase tracking-wider ml-0.5">🔥 핵심 재미</h4>
+              <h4 className="text-[13px] font-black text-indigo-500 mb-1.5 uppercase tracking-wider ml-0.5">🔥 핵심 재미</h4>
               <div className="flex flex-wrap gap-2">
                 {CORE_TAGS.map(t => {
                   const tag = cleanTag(t);
                   const isSelected = uiTags.includes(tag);
                   
                   return (
-                    <button key={t} onClick={() => toggleTag(t)} className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-all active:scale-95 ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-gray-500 border-gray-100 hover:border-indigo-200 hover:text-indigo-600'}`}>
+                    <button key={t} onClick={() => toggleTag(t)} className={`px-3 py-2 rounded-xl text-[13px] font-bold border transition-all active:scale-95 ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-gray-500 border-gray-100 hover:border-indigo-200 hover:text-indigo-600'}`}>
                       {t}
                     </button>
                   );
@@ -447,13 +439,13 @@ export default function Home() {
               <div className="space-y-3 animate-in fade-in slide-in-from-top-1 mt-2">
                 {Object.entries(TAG_GROUPS).map(([groupName, tags]) => (
                   <div key={groupName}>
-                    <h4 className="text-[10px] font-black text-gray-400 mb-1.5 ml-0.5">{groupName}</h4>
+                    <h4 className="text-[13px] font-black text-gray-400 mb-1.5 ml-0.5">{groupName}</h4>
                     <div className="flex flex-wrap gap-2">
                       {tags.map(t => {
                         const tag = cleanTag(t);
                         const isSelected = uiTags.includes(tag);
                         return (
-                          <button key={t} onClick={() => toggleTag(t)} className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-all active:scale-95 ${isSelected ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'}`}>
+                          <button key={t} onClick={() => toggleTag(t)} className={`px-3 py-2 rounded-xl text-[13px] font-bold border transition-all active:scale-95 ${isSelected ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'}`}>
                             {t}
                           </button>
                         );
@@ -497,7 +489,7 @@ export default function Home() {
                 <Sparkles size={16} className={appliedTags.length > 0 ? "text-indigo-600" : "text-yellow-500"} />
                 {appliedTags.length > 0 ? <span className="text-indigo-600">추천 순위 ({scored.length})</span> : "지금 많이 찾는 작품"}
               </h2>
-              <span className="text-[10px] font-bold text-gray-400">취향 일치순</span>
+              <span className="text-xs font-bold text-gray-400">취향 일치순</span>
             </div>
             
             {appliedTags.length === 0 && <p className="text-xs font-bold text-gray-400 -mt-2 mb-2 ml-7">요즘 인기 조합 반영</p>}
@@ -508,7 +500,7 @@ export default function Home() {
               <div className="text-center py-16 bg-gray-50 rounded-3xl border border-dashed border-gray-200 animate-in fade-in zoom-in duration-300">
                 <Ghost size={32} className="mx-auto mb-3 text-gray-400"/>
                 <h3 className="text-gray-900 font-black text-lg mb-1">결과가 없어요 😢</h3>
-                <p className="text-xs text-gray-500 font-bold mb-6">조건을 조금만 풀어볼까요?</p>
+                <p className="text-sm text-gray-500 font-bold mb-6">조건을 조금만 풀어볼까요?</p>
                 
                 <div className="flex flex-col items-center gap-4">
                    <button onClick={resetFilter} className="py-3 px-6 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-100 flex items-center gap-2 shadow-sm transition-all">
@@ -516,7 +508,7 @@ export default function Home() {
                    </button>
                    
                    <div className="flex flex-col items-center gap-1 mt-2">
-                     <span className="text-[10px] text-gray-400 font-bold">혹시 찾는 작품이 없나요?</span>
+                     <span className="text-xs text-gray-400 font-bold">혹시 찾는 작품이 없나요?</span>
                      <button 
                        onClick={() => router.push(`/add?prefill_tags=${encodeURIComponent(appliedTags.join(','))}`)} 
                        className="text-indigo-600 text-xs font-black underline flex items-center gap-1 hover:text-indigo-800"
@@ -537,42 +529,43 @@ export default function Home() {
                     if (aSelected === bSelected) return 0;
                     return aSelected ? -1 : 1;
                   });
-                  const r = work.adminTaste.romance ?? 50;
-                  const c = work.adminTaste.cider ?? 50;
-                  const p = work.adminTaste.pace ?? 50;
                   
+                  const top3Stats = SLIDER_CONFIG.map(conf => {
+                     const val = (work.adminTaste as any)[conf.key] ?? 50;
+                     const distinctness = Math.abs(val - 50);
+                     return { ...conf, val, distinctness, label: val >= 50 ? conf.right : conf.left };
+                  }).sort((a, b) => b.distinctness - a.distinctness).slice(0, 3);
+
                   return (
                     <div key={work.id} onClick={() => router.push(`/work/${work.id}`)} className="bg-white p-4 rounded-[20px] border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all cursor-pointer relative overflow-hidden group">
-                      <div className="flex justify-between items-start mb-0.5">
+                      <div className="flex justify-between items-start mb-1">
                         <div className="flex items-center gap-1.5 overflow-hidden">
-                           <span className="text-xs text-gray-400 font-bold tracking-tight truncate">{work.author || '작가 미상'}</span>
-                           <span className="text-[10px] text-gray-300 font-medium shrink-0">·</span>
-                           <span className="text-[10px] text-gray-300 font-bold shrink-0">{work.releaseYear}</span>
+                           <span className="text-sm text-gray-500 font-bold tracking-tight truncate">{work.author || '작가 미상'}</span>
+                           <span className="text-xs text-gray-300 font-medium shrink-0">·</span>
+                           <span className="text-[13px] text-gray-400 font-bold shrink-0">{work.releaseYear}</span>
                         </div>
-                        <div className={`shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black border ${tone}`}>
+                        <div className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black border ${tone}`}>
                           {work.badge} {label}
                         </div>
                       </div>
-                      <h3 className="text-[18px] font-black text-gray-900 leading-tight group-hover:text-indigo-600 mb-1 tracking-tight truncate">
+                      <h3 className="text-[20px] font-black text-gray-900 leading-tight group-hover:text-indigo-600 mb-2 tracking-tight truncate">
                         {work.title}
                       </h3>
-                      <div className="flex flex-wrap gap-1 mb-2.5 h-[22px] overflow-hidden">
+                      <div className="flex flex-wrap gap-1 mb-3 h-[24px] overflow-hidden">
                         {sortedTags.slice(0, 5).map((tag) => (
-                          <span key={tag} className={`px-2 py-[2px] text-[10px] font-bold rounded-md tracking-tight whitespace-nowrap border ${appliedTags.includes(tag) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-purple-50 text-purple-700 border-purple-100'}`}>
+                          <span key={tag} className={`px-2 py-[3px] text-xs font-bold rounded-md tracking-tight whitespace-nowrap border ${appliedTags.includes(tag) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-purple-50 text-purple-700 border-purple-100'}`}>
                             #{tag}
                           </span>
                         ))}
                       </div>
-                      <div className="grid grid-cols-3 gap-0 divide-x divide-slate-200 bg-[#F8F9FE] rounded-lg border border-slate-100 py-2">
-                        <div className="flex flex-col items-center justify-center leading-none gap-0.5">
-                          <span className="text-[10px]">🌵</span><span className="text-[9px] font-bold text-slate-500">{r < 30 ? '노맨스' : '로맨스'} {r}%</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center leading-none gap-0.5">
-                          <span className="text-[10px]">🥤</span><span className="text-[9px] font-bold text-slate-500">{c > 70 ? '사이다' : '고구마'} {c}%</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center leading-none gap-0.5">
-                          <span className="text-[10px]">⚡</span><span className="text-[9px] font-bold text-slate-500">{p > 60 ? '빠름' : '느림'} {p}%</span>
-                        </div>
+                      
+                      <div className="grid grid-cols-3 gap-0 divide-x divide-slate-200 bg-[#F8F9FE] rounded-lg border border-slate-100 py-2.5">
+                        {top3Stats.map((stat) => (
+                          <div key={stat.key} className="flex flex-col items-center justify-center leading-none gap-0.5">
+                             <span className="text-xs font-bold text-slate-400">{stat.label.split(' ')[0]}</span>
+                             <span className="text-xs font-black text-slate-600">{stat.label.split(' ')[1]} <span className="text-indigo-400">{stat.val}%</span></span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
@@ -592,7 +585,7 @@ export default function Home() {
           <div className="fixed bottom-12 left-0 right-0 z-[100] flex justify-center pointer-events-none">
             <div className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-2xl rounded-full pl-5 pr-1 py-1.5 flex items-center gap-3 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in">
               <div className="flex flex-col items-center leading-none py-1">
-                <span className="text-[9px] text-gray-400 font-bold mb-0.5">선택된 맛</span>
+                <span className="text-[11px] text-gray-400 font-bold mb-0.5">선택된 맛</span>
                 <div className="flex gap-1 h-5 overflow-x-auto scrollbar-hide max-w-[120px] items-center">
                   {uiTags.length > 0 ? uiTags.map(tag => (
                     <span key={tag} className="text-indigo-600 font-black text-xs shrink-0 whitespace-nowrap">#{tag}</span>
@@ -610,12 +603,12 @@ export default function Home() {
                   🔍 결과 보기
                 </button>
               ) : (
-                <div className="text-[10px] font-bold text-gray-400 pr-3 pl-1">{scored.length}건</div>
+                <div className="text-xs font-bold text-gray-400 pr-3 pl-1">{scored.length}건</div>
               )}
             </div>
           </div>
         )}
-
+        
         {showLevelUpModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowLevelUpModal(false)}></div>
