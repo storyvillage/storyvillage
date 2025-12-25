@@ -6,9 +6,10 @@ import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { ChevronLeft, Map, Zap, Gift, Filter } from 'lucide-react';
 import {
-  Taste, parseTagsParam, tasteFromSearchParams,
+  CORE_TAGS, TAG_GROUPS, NEUTRAL_TASTE, Taste,
+  cleanTag, buildSearchUrl, // 옛날 이름(tasteFromSearchParams 등)은 뺍니다
   calcTagMatch, calcTasteMatch, calcFreshBoost, trustBoostFromBadge,
-  computeBadge, badgeLabel, badgeTone, topTasteSummary, cleanTag
+  computeBadge, badgeLabel, badgeTone, topTasteSummary
 } from '@/lib/storyvillage';
 
 type Work = {
