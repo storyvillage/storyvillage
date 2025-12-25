@@ -73,9 +73,8 @@ export default function SearchPage() {
 }, [sp]);
 
 const taste = useMemo(() => ({
-  tags,
   ...NEUTRAL_TASTE
-}), [tags]);
+}), []);
 
   const [works, setWorks] = useState<Work[]>([]);
   const [loading, setLoading] = useState(true);
