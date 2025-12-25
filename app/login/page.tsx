@@ -40,7 +40,9 @@ function LoginForm() {
 
   const handleSocialLogin = async (provider: 'google' | 'kakao') => {
     // ✅ 돌아올 주소를 더 안전하게 만듭니다.
-    const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+    // ✅ 현재 접속한 주소가 로컬인지 실제 사이트인지 알아서 판단해서 돌아갑니다.
+const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://storyvillage.vercel.app';
+const redirectUrl = `${baseUrl}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
     
     const { error } = await supabase.auth.signInWithOAuth({ 
       provider, 
