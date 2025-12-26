@@ -1,6 +1,5 @@
 // 1. 맨 위에 이거 한 줄 추가
-import { Analytics } from "@vercel/analytics/react"
-
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -24,6 +23,7 @@ export default function RootLayout({
           이제 각 페이지에서 만든 헤더만 깔끔하게 나옵니다.
         */}
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
