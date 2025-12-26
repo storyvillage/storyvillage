@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
@@ -66,7 +66,8 @@ const SLIDER_CONFIG = [
   { key: 'growth', left: '👶 성장', right: '👑 완성', color: 'accent-yellow-600' },
 ];
 
-export default function Home() {
+// 🔥 [수정] 실제 로직을 담은 내부 컴포넌트 (기존 Home)
+function StoryVillageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -271,7 +272,6 @@ export default function Home() {
       if (val !== 50) params.set(key, val.toString());
     });
 
-    // [수정] 검색 시 현재 보고 있는 갯수(더보기 상태)를 유지
     params.set('limit', visibleCount.toString());
 
     router.push(`?${params.toString()}`);
@@ -449,7 +449,6 @@ export default function Home() {
           )}
 
           <div className="mb-2">
-            {/* 🔥 수정: gap-3 -> gap-2로 줄여서 모바일 한 줄 정렬 공간 확보 */}
             <div className="flex flex-wrap items-end gap-2 mb-3">
               <div>
                 <span className="text-sm font-black text-gray-800 flex items-center gap-1"><Filter size={16}/> 오늘 땡기는 맛</span>
@@ -457,12 +456,10 @@ export default function Home() {
               </div>
               
               <div className="flex gap-2">
-                {/* 🔥 수정: 주사위 이모지 제거 & whitespace-nowrap 추가 */}
                 <button onClick={pickRandomTag} className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-md text-xs font-black flex items-center gap-1 hover:bg-indigo-200 transition-all border border-indigo-200 whitespace-nowrap">
                   <Dices size={12}/> 랜덤 조합
                 </button>
 
-                {/* 🔥 수정: w-24 제거 (폭 유동적) & whitespace-nowrap 추가 (줄바꿈 방지) */}
                 <button 
                   onClick={() => setIsSliderOpen(!isSliderOpen)} 
                   className={`px-3 py-1.5 rounded-md text-xs font-black flex items-center justify-center gap-1 transition-all border whitespace-nowrap ${isSliderOpen ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
@@ -473,7 +470,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 슬라이더 패널 (위치: 버튼 바로 아래) */}
             {isSliderOpen && (
               <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-in slide-in-from-top-2 fade-in">
                 <div className="flex justify-between items-center mb-2">
@@ -657,7 +653,6 @@ export default function Home() {
           </div>
         </main>
         
-        {/* [수정] 플로팅 바 상시 노출 (조건문 제거) */}
         <div className="fixed bottom-12 left-0 right-0 z-[100] flex justify-center pointer-events-none">
           <div className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-2xl rounded-full pl-5 pr-1 py-1.5 flex items-center gap-3 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in">
             <div className="flex flex-col items-center leading-none py-1">
@@ -721,5 +716,14 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+// 🔥 [수정] 배포 에러 방지용 껍데기
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center font-bold text-gray-400">마을에 입장하는 중...</div>}>
+      <StoryVillageContent />
+    </Suspense>
   );
 }
