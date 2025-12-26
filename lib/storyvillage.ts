@@ -167,3 +167,27 @@ export function topTasteSummary(t: Taste) {
     return `${label} ${Math.round(displayScore)}%`;
   });
 }
+
+// ✅ [복구] 검색 URL 생성 함수 (빌드 에러 해결)
+export function buildSearchUrl(tags: string[], sliders: Taste, term: string = '') {
+  const params = new URLSearchParams();
+  
+  // 1. 태그 파라미터
+  if (tags.length > 0) {
+    params.set('tags', tags.join(','));
+  }
+  
+  // 2. 검색어 파라미터
+  if (term.trim()) {
+    params.set('q', term.trim());
+  }
+  
+  // 3. 슬라이더(취향) 파라미터 (50이 아닌 것만)
+  Object.entries(sliders).forEach(([key, val]) => {
+    if (typeof val === 'number' && val !== 50) {
+      params.set(key, val.toString());
+    }
+  });
+
+  return `/?${params.toString()}`;
+}
