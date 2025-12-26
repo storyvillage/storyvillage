@@ -1,12 +1,12 @@
 'use client';
 
-// 👇 [핵심 수정] 이 한 줄이 배포 에러를 막아줍니다! (동적 페이지 선언)
+// 👇 배포 에러 방지
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Analytics } from '@vercel/analytics/react'; // 방문자 집계 도구
+import { Analytics } from '@vercel/analytics/react';
 import { 
   Search, Filter, RotateCcw, Sparkles, Dices, User, LogIn, LogOut, Ghost, PenTool, 
   ChevronDown, Zap, Map, Radar, X, SlidersHorizontal, Gift, Lock, Plus, Info, Trophy, PartyPopper, Crown
@@ -39,18 +39,36 @@ type RadarItem = { id: number; tags: string[]; search_count: number; zero_rate: 
 type DailyQuest = { id: number; date: string; tags: string[]; sliders: any; status: string; };
 
 function normalizeWork(row: any): Work {
-  const rawTags = Array.isArray(row?.tags) ? row.tags : typeof row?.tags === 'string' ? row.tags.split(',').map((s:string)=>s.trim()).filter(Boolean) : [];
-  const tags = rawTags.map((t:any) => cleanTag(String(t)));
+  let rawTags: any[] = [];
+  if (Array.isArray(row?.tags)) {
+    rawTags = row.tags;
+  } else if (typeof row?.tags === 'string') {
+    try {
+      if (row.tags.trim().startsWith('[')) {
+        rawTags = JSON.parse(row.tags);
+      } else {
+        rawTags = row.tags.split(',').map((s: string) => s.trim());
+      }
+    } catch {
+      rawTags = [];
+    }
+  }
+  
+  const tags = rawTags.map((t:any) => cleanTag(String(t))).filter(Boolean);
   const s = row.stats || {};
+  
   const adminTaste: Taste = {
     cider: Number(s.cider ?? row.admin_cider ?? 50), pace: Number(s.pace ?? row.admin_pace ?? 50),
     dark: Number(s.mood ?? row.admin_dark ?? 50), romance: Number(s.romance ?? row.admin_romance ?? 50),
     probability: Number(s.probability ?? row.admin_probability ?? 50), character: Number(s.character ?? row.admin_character ?? 50),
     growth: Number(s.growth ?? row.admin_growth ?? 50),
+    readability: Number(s.readability ?? row.admin_readability ?? 50),
   };
+  
   const nVotes = Number(row?.n_votes ?? 0);
   const avgDiff = Number(row?.avg_diff ?? 0);
   const dateObj = new Date(row.created_at || Date.now());
+  
   return {
     id: row?.id ?? crypto.randomUUID(), title: String(row?.title ?? '제목 없음'), author: row?.author ?? '',
     tags, adminTaste, nVotes, avgDiff, badge: (row?.badge as any) ?? computeBadge(nVotes, avgDiff),
@@ -59,14 +77,14 @@ function normalizeWork(row: any): Work {
   };
 }
 
-// --- [슬라이더 설정] ---
 const SLIDER_CONFIG = [
+  { key: 'readability', left: '📚 묵직함', right: '📖 술술', color: 'accent-emerald-600' },
   { key: 'cider', left: '🍠 고구마', right: '🥤 사이다', color: 'accent-indigo-600' },
   { key: 'pace', left: '🐢 느림', right: '⚡ 빠름', color: 'accent-blue-600' },
   { key: 'dark', left: '☀️ 힐링', right: '🌑 피폐', color: 'accent-gray-600' },
   { key: 'romance', left: '🌵 노맨스', right: '💖 로맨스', color: 'accent-pink-600' },
   { key: 'probability', left: '⚡ 극적허용', right: '🧠 개연성', color: 'accent-purple-600' },
-  { key: 'character', left: '😇 선함', right: '😈 악당', color: 'accent-red-600' },
+  { key: 'character', left: '😇 선함', right: '😈 입체적', color: 'accent-red-600' },
   { key: 'growth', left: '👶 성장', right: '👑 완성', color: 'accent-yellow-600' },
 ];
 
@@ -74,10 +92,8 @@ function StoryVillageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resultsRef = useRef<HTMLDivElement>(null);
-  
   const isInitialMount = useRef(true);
 
-  // --- [상태 관리] ---
   const [works, setWorks] = useState<Work[]>([]);
   const [radar, setRadar] = useState<RadarItem[]>([]);
   const [quest, setQuest] = useState<DailyQuest | null>(null);
@@ -99,6 +115,8 @@ function StoryVillageContent() {
   const [isRadarOpen, setIsRadarOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  
+  const [isDnaApplied, setIsDnaApplied] = useState(false);
 
   const preset = useMemo(() => recommendPresetFromTags(uiTags), [uiTags]);
 
@@ -123,16 +141,17 @@ function StoryVillageContent() {
 
     setUiTags(newTags);
     setAppliedTags(newTags);
-    
     setUiSearchTerm(newSearch);
     setAppliedSearchTerm(newSearch);
     
-    setUiSliders(newSliders);
-    setAppliedSliders(newSliders);
+    if (hasSliderParam) {
+      setUiSliders(newSliders);
+      setAppliedSliders(newSliders);
+      setIsSliderOpen(true);
+      setIsDnaApplied(false);
+    }
 
     setVisibleCount(newVisibleCount);
-
-    if (hasSliderParam) setIsSliderOpen(true);
 
     if (isInitialMount.current) {
       if (newTags.length > 0 || newSearch || hasSliderParam || limitParam) {
@@ -142,7 +161,6 @@ function StoryVillageContent() {
       }
       isInitialMount.current = false; 
     }
-
   }, [searchParams]);
 
   useEffect(() => {
@@ -153,26 +171,32 @@ function StoryVillageContent() {
 
   const checkUserAndDNA = async () => {
     const { data: { session } } = await supabase.auth.getSession();
+    
     if (session?.user) {
-      setUser(session.user);
-      const { data: pData } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-      if (pData) {
-        setProfile(pData);
-        const storageKey = `level_${session.user.id}`;
-        const prevLevel = localStorage.getItem(storageKey);
-        if (prevLevel && parseInt(prevLevel) < pData.level) setShowLevelUpModal(true);
-        localStorage.setItem(storageKey, pData.level.toString());
-      }
+      const { data: pData } = await supabase.from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-      if (!searchParams.has('cider') && !searchParams.has('tags')) {
-        const { data: dna } = await supabase.from('taste_profiles').select('*').eq('user_id', session.user.id).single();
-        if (dna) {
-          const dnaTaste = {
-            cider: dna.cider ?? 50, pace: dna.pace ?? 50, dark: dna.dark ?? 50, romance: dna.romance ?? 50,
-            probability: 50, character: 50, growth: 50
+      if (pData) {
+        setProfile(pData); 
+        setUser(session.user);
+
+        if (pData.dna) {
+          const dna = typeof pData.dna === 'string' ? JSON.parse(pData.dna) : pData.dna;
+          const dnaTaste: Taste = {
+            cider: Number(dna.cider ?? 50),
+            pace: Number(dna.pace ?? 50),
+            dark: Number(dna.dark ?? dna.mood ?? 50),
+            romance: Number(dna.romance ?? 50),
+            probability: Number(dna.probability ?? 50),
+            character: Number(dna.character ?? 50),
+            growth: Number(dna.growth ?? 50),
+            readability: Number(dna.readability ?? 50)
           };
           setUiSliders(dnaTaste);
-          setAppliedSliders(dnaTaste); 
+          setAppliedSliders(dnaTaste);
+          setIsDnaApplied(true);
         }
       }
     }
@@ -231,6 +255,7 @@ function StoryVillageContent() {
   const resetFilter = () => {
     setUiTags([]); setUiSearchTerm(''); setUiSliders(NEUTRAL_TASTE);
     setIsSliderOpen(false);
+    setIsDnaApplied(false);
     router.push('/');
   };
 
@@ -254,7 +279,6 @@ function StoryVillageContent() {
       });
 
       router.push(`?${params.toString()}`);
-      
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -263,19 +287,14 @@ function StoryVillageContent() {
 
   const executeSearch = () => {
     const params = new URLSearchParams();
-    
     if (uiTags.length > 0) params.set('tags', uiTags.join(','));
     if (uiSearchTerm.trim()) params.set('q', uiSearchTerm.trim());
-    
     SLIDER_CONFIG.forEach(({ key }) => {
       const val = uiSliders[key as keyof Taste];
       if (val !== 50) params.set(key, val.toString());
     });
-
     params.set('limit', visibleCount.toString());
-
     router.push(`?${params.toString()}`);
-    
     setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -298,7 +317,7 @@ function StoryVillageContent() {
       const { tagMatch, corePenalty, overlapped } = calcTagMatch(appliedTags, w.tags);
       const tasteMatch = calcTasteMatch(appliedSliders, w.adminTaste);
       const trust = trustBoostFromBadge(w.badge ?? '⚪');
-      const fresh = calcFreshBoost(w.updatedAt ?? w.createdAt);
+      const fresh = calcFreshBoost(w.updatedAt ?? w.createdAt ?? '');
       
       const baseScore = tasteMatch * 0.55 + tagMatch * 0.30 + trust * 0.10 + fresh * 0.05;
       const finalScore = baseScore * 100 + corePenalty;
@@ -307,7 +326,7 @@ function StoryVillageContent() {
     });
 
     const filtered = appliedTags.length > 0 
-      ? list.filter(item => item.meta.overlapped.length === appliedTags.length)
+      ? list.filter(item => item.meta.overlapped && item.meta.overlapped.length === appliedTags.length)
       : list;
 
     filtered.sort((a,b) => b.meta.finalScore - a.meta.finalScore);
@@ -355,7 +374,7 @@ function StoryVillageContent() {
                     </span>
                   </div>
 
-                  <span className="md:hidden text-xs font-black text-indigo-700 max-w-[60px] truncate">
+                  <span className="md:hidden text-xs font-black text-indigo-700 max-w-[80px] truncate">
                     {profile?.nickname || '주민'}
                   </span>
                 </div>
@@ -381,8 +400,20 @@ function StoryVillageContent() {
           </div>
         </header>
 
-        <main className="px-6 pt-4">
+        <main className="px-6 pt-0">
           
+          {/* ✅ DNA 적용 알림 (수정됨: py-2.5로 균형 맞춤 + 텍스트 정렬 보정) */}
+          {isDnaApplied && (
+            <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2.5 flex justify-between items-center animate-in slide-in-from-top-2 shadow-sm">
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-indigo-600 animate-pulse shrink-0"/>
+                {/* leading-none과 pt-[1px]를 추가하여 한글이 시각적 중앙에 오도록 미세 조정 */}
+                <span className="text-xs font-black text-indigo-800 leading-none pt-[1px]">DNA 취향 분석이 적용되었습니다!</span>
+              </div>
+              <button onClick={resetFilter} className="text-[11px] font-bold text-gray-400 underline hover:text-indigo-600 shrink-0 leading-none">해제</button>
+            </div>
+          )}
+
           <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="shrink-0">
               <h2 className="text-2xl font-black text-gray-900 leading-tight">
@@ -395,8 +426,11 @@ function StoryVillageContent() {
               <button 
                 onClick={() => {
                   if (!user) {
-                    alert("🔒 DNA 분석은 로그인이 필요한 기능입니다.\n(결과를 저장하고 검색에 반영해야 하거든요!)");
-                    router.push('/login');
+                    if(confirm("로그인하면 결과를 저장해서 계속 쓸 수 있어요!\n로그인 하러 갈까요?")) {
+                        router.push('/login');
+                    } else {
+                        router.push('/dna');
+                    }
                     return;
                   }
                   router.push('/dna');
@@ -473,7 +507,7 @@ function StoryVillageContent() {
             {isSliderOpen && (
               <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-in slide-in-from-top-2 fade-in">
                 <div className="flex justify-between items-center mb-2">
-                   <h4 className="text-xs font-black text-gray-700 flex items-center gap-1"><SlidersHorizontal size={14}/> 7대 성분 미세 조정</h4>
+                   <h4 className="text-xs font-black text-gray-700 flex items-center gap-1"><SlidersHorizontal size={14}/> 8대 성분 미세 조정</h4>
                    <button onClick={() => setUiSliders(NEUTRAL_TASTE)} className="text-xs text-gray-400 font-bold underline hover:text-indigo-500">초기화</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
@@ -558,13 +592,13 @@ function StoryVillageContent() {
           <div ref={resultsRef} className="space-y-4">
             <div className="flex justify-between items-end">
               <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <Sparkles size={16} className={appliedTags.length > 0 ? "text-indigo-600" : "text-yellow-500"} />
-                {appliedTags.length > 0 ? <span className="text-indigo-600">추천 순위 ({scored.length})</span> : "지금 많이 찾는 작품"}
+                <Sparkles size={16} className={appliedTags.length > 0 || isDnaApplied ? "text-indigo-600" : "text-yellow-500"} />
+                {appliedTags.length > 0 || isDnaApplied ? <span className="text-indigo-600">추천 순위 ({scored.length})</span> : "지금 많이 찾는 작품"}
               </h2>
               <span className="text-xs font-bold text-gray-400">취향 일치순</span>
             </div>
             
-            {appliedTags.length === 0 && <p className="text-xs font-bold text-gray-400 -mt-2 mb-2 ml-7">요즘 인기 조합 반영</p>}
+            {appliedTags.length === 0 && !isDnaApplied && <p className="text-xs font-bold text-gray-400 -mt-2 mb-2 ml-7">요즘 인기 조합 반영</p>}
 
             {loading ? (
               <div className="text-center py-20 text-gray-400 font-bold animate-pulse">데이터 로딩중...</div>
@@ -603,9 +637,9 @@ function StoryVillageContent() {
                   });
                   
                   const top3Stats = SLIDER_CONFIG.map(conf => {
-                     const val = (work.adminTaste as any)[conf.key] ?? 50;
-                     const distinctness = Math.abs(val - 50);
-                     return { ...conf, val, distinctness, label: val >= 50 ? conf.right : conf.left };
+                      const val = (work.adminTaste as any)[conf.key] ?? 50;
+                      const distinctness = Math.abs(val - 50);
+                      return { ...conf, val, distinctness, label: val >= 50 ? conf.right : conf.left };
                   }).sort((a, b) => b.distinctness - a.distinctness).slice(0, 3);
 
                   return (
@@ -623,6 +657,7 @@ function StoryVillageContent() {
                       <h3 className="text-[20px] font-black text-gray-900 leading-tight group-hover:text-indigo-600 mb-2 tracking-tight truncate">
                         {work.title}
                       </h3>
+                      {/* ✅ [핵심] JSON.parse 제거. 이미 배열임 */}
                       <div className="flex flex-wrap gap-1 mb-3 h-[24px] overflow-hidden">
                         {sortedTags.slice(0, 5).map((tag) => (
                           <span key={tag} className={`px-2 py-[3px] text-xs font-bold rounded-md tracking-tight whitespace-nowrap border ${appliedTags.includes(tag) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-purple-50 text-purple-700 border-purple-100'}`}>
@@ -653,6 +688,7 @@ function StoryVillageContent() {
           </div>
         </main>
         
+        {/* 하단 플로팅 바 등 나머지 UI 그대로 유지 */}
         <div className="fixed bottom-12 left-0 right-0 z-[100] flex justify-center pointer-events-none">
           <div className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-2xl rounded-full pl-5 pr-1 py-1.5 flex items-center gap-3 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in">
             <div className="flex flex-col items-center leading-none py-1">
@@ -715,14 +751,12 @@ function StoryVillageContent() {
           </div>
         )}
 
-        {/* [추가] 분석 도구 컴포넌트 삽입 */}
         <Analytics />
       </div>
     </div>
   );
 }
 
-// 배포 에러 방지용 껍데기
 export default function Home() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center font-bold text-gray-400">마을에 입장하는 중...</div>}>
