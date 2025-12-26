@@ -1,0 +1,7 @@
+{
+  "files.exclude": {
+    "**/_weosodata": true,
+    "**/.DS_Store": true,
+    "**/.git": true
+  }
+}
