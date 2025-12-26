@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Search, Filter, RotateCcw, Sparkles, Dices, User, LogIn, LogOut, Ghost, PenTool, 
   ChevronDown, Zap, Map, Radar, X, SlidersHorizontal, Gift, Lock, Plus, Info, Trophy, PartyPopper, Crown
@@ -68,7 +68,11 @@ const SLIDER_CONFIG = [
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const resultsRef = useRef<HTMLDivElement>(null);
+  
+  // 초기 로딩 여부 체크
+  const isInitialMount = useRef(true);
 
   // --- [상태 관리] ---
   const [works, setWorks] = useState<Work[]>([]);
@@ -95,6 +99,51 @@ export default function Home() {
 
   const preset = useMemo(() => recommendPresetFromTags(uiTags), [uiTags]);
 
+  // URL 파라미터 동기화
+  useEffect(() => {
+    const tagsParam = searchParams.get('tags');
+    const searchParam = searchParams.get('q');
+    const limitParam = searchParams.get('limit');
+    
+    const newSliders: Taste = { ...NEUTRAL_TASTE };
+    let hasSliderParam = false;
+    SLIDER_CONFIG.forEach(({ key }) => {
+      const val = searchParams.get(key);
+      if (val) {
+        newSliders[key as keyof Taste] = Number(val);
+        hasSliderParam = true;
+      }
+    });
+
+    const newTags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
+    const newSearch = searchParam || '';
+    const newVisibleCount = limitParam ? parseInt(limitParam) : 15;
+
+    setUiTags(newTags);
+    setAppliedTags(newTags);
+    
+    setUiSearchTerm(newSearch);
+    setAppliedSearchTerm(newSearch);
+    
+    setUiSliders(newSliders);
+    setAppliedSliders(newSliders);
+
+    setVisibleCount(newVisibleCount);
+
+    if (hasSliderParam) setIsSliderOpen(true);
+
+    // 페이지 최초 진입/뒤로가기 시에만 스크롤 이동
+    if (isInitialMount.current) {
+      if (newTags.length > 0 || newSearch || hasSliderParam || limitParam) {
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 400);
+      }
+      isInitialMount.current = false; 
+    }
+
+  }, [searchParams]);
+
   useEffect(() => {
     (async () => {
       await Promise.all([fetchWorks(), fetchRadar(), fetchQuest(), checkUserAndDNA()]);
@@ -114,14 +163,16 @@ export default function Home() {
         localStorage.setItem(storageKey, pData.level.toString());
       }
 
-      const { data: dna } = await supabase.from('taste_profiles').select('*').eq('user_id', session.user.id).single();
-      if (dna) {
-        const dnaTaste = {
-          cider: dna.cider ?? 50, pace: dna.pace ?? 50, dark: dna.dark ?? 50, romance: dna.romance ?? 50,
-          probability: 50, character: 50, growth: 50
-        };
-        setUiSliders(dnaTaste);
-        setAppliedSliders(dnaTaste); 
+      if (!searchParams.has('cider') && !searchParams.has('tags')) {
+        const { data: dna } = await supabase.from('taste_profiles').select('*').eq('user_id', session.user.id).single();
+        if (dna) {
+          const dnaTaste = {
+            cider: dna.cider ?? 50, pace: dna.pace ?? 50, dark: dna.dark ?? 50, romance: dna.romance ?? 50,
+            probability: 50, character: 50, growth: 50
+          };
+          setUiSliders(dnaTaste);
+          setAppliedSliders(dnaTaste); 
+        }
       }
     }
   };
@@ -178,8 +229,8 @@ export default function Home() {
 
   const resetFilter = () => {
     setUiTags([]); setUiSearchTerm(''); setUiSliders(NEUTRAL_TASTE);
-    setAppliedTags([]); setAppliedSearchTerm(''); setAppliedSliders(NEUTRAL_TASTE);
     setIsSliderOpen(false);
+    router.push('/');
   };
 
   const applyPreset = () => {
@@ -192,11 +243,17 @@ export default function Home() {
     if (!quest) return;
     const msg = `📅 오늘의 퀘스트\n촌장님이 엄선한 [ #${quest.tags.join(', #')} ] 테마입니다.\n\n이 세팅으로 필터를 적용하시겠습니까?`;
     if (window.confirm(msg)) {
-      setUiTags(quest.tags);
-      setUiSliders({...NEUTRAL_TASTE, ...quest.sliders});
-      setAppliedTags(quest.tags);
-      setAppliedSliders({...NEUTRAL_TASTE, ...quest.sliders});
-      setIsSliderOpen(true);
+      const params = new URLSearchParams();
+      if (quest.tags.length > 0) params.set('tags', quest.tags.join(','));
+      
+      const newSliders = {...NEUTRAL_TASTE, ...quest.sliders};
+      SLIDER_CONFIG.forEach(({ key }) => {
+        const val = newSliders[key as keyof Taste];
+        if (val !== 50) params.set(key, val.toString());
+      });
+
+      router.push(`?${params.toString()}`);
+      
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -204,12 +261,31 @@ export default function Home() {
   };
 
   const executeSearch = () => {
-    setAppliedTags(uiTags);
-    setAppliedSliders(uiSliders);
-    setAppliedSearchTerm(uiSearchTerm);
+    const params = new URLSearchParams();
+    
+    if (uiTags.length > 0) params.set('tags', uiTags.join(','));
+    if (uiSearchTerm.trim()) params.set('q', uiSearchTerm.trim());
+    
+    SLIDER_CONFIG.forEach(({ key }) => {
+      const val = uiSliders[key as keyof Taste];
+      if (val !== 50) params.set(key, val.toString());
+    });
+
+    // [수정] 검색 시 현재 보고 있는 갯수(더보기 상태)를 유지
+    params.set('limit', visibleCount.toString());
+
+    router.push(`?${params.toString()}`);
+    
     setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+  };
+
+  const handleLoadMore = () => {
+    const nextCount = visibleCount + 12;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('limit', nextCount.toString());
+    router.push(`?${params.toString()}`, { scroll: false });
   };
 
   const scored = useMemo(() => {
@@ -574,40 +650,39 @@ export default function Home() {
             )}
             
             {visibleCount < scored.length && (
-              <button onClick={() => setVisibleCount(prev => prev + 12)} className="w-full py-4 bg-gray-50 text-gray-500 font-bold text-sm rounded-2xl hover:bg-gray-100 transition-colors">
+              <button onClick={handleLoadMore} className="w-full py-4 bg-gray-50 text-gray-500 font-bold text-sm rounded-2xl hover:bg-gray-100 transition-colors">
                 더 보기 ({scored.length - visibleCount}개 남음)
               </button>
             )}
           </div>
         </main>
         
-        {(uiTags.length > 0 || uiSearchTerm || isChanged) && (
-          <div className="fixed bottom-12 left-0 right-0 z-[100] flex justify-center pointer-events-none">
-            <div className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-2xl rounded-full pl-5 pr-1 py-1.5 flex items-center gap-3 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in">
-              <div className="flex flex-col items-center leading-none py-1">
-                <span className="text-[11px] text-gray-400 font-bold mb-0.5">선택된 맛</span>
-                <div className="flex gap-1 h-5 overflow-x-auto scrollbar-hide max-w-[120px] items-center">
-                  {uiTags.length > 0 ? uiTags.map(tag => (
-                    <span key={tag} className="text-indigo-600 font-black text-xs shrink-0 whitespace-nowrap">#{tag}</span>
-                  )) : <span className="text-gray-300 text-xs font-bold">전체</span>}
-                </div>
+        {/* [수정] 플로팅 바 상시 노출 (조건문 제거) */}
+        <div className="fixed bottom-12 left-0 right-0 z-[100] flex justify-center pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-2xl rounded-full pl-5 pr-1 py-1.5 flex items-center gap-3 pointer-events-auto animate-in slide-in-from-bottom-4 fade-in">
+            <div className="flex flex-col items-center leading-none py-1">
+              <span className="text-[11px] text-gray-400 font-bold mb-0.5">선택된 맛</span>
+              <div className="flex gap-1 h-5 overflow-x-auto scrollbar-hide max-w-[120px] items-center">
+                {uiTags.length > 0 ? uiTags.map(tag => (
+                  <span key={tag} className="text-indigo-600 font-black text-xs shrink-0 whitespace-nowrap">#{tag}</span>
+                )) : <span className="text-gray-300 text-xs font-bold">전체</span>}
               </div>
-              <div className="w-[1px] h-6 bg-gray-200"></div>
-              
-              <button onClick={resetFilter} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-gray-500">
-                <RotateCcw size={14}/>
-              </button>
-
-              {isChanged ? (
-                <button onClick={executeSearch} className="px-4 py-2 bg-indigo-600 text-white rounded-full font-black text-xs hover:bg-indigo-700 transition-colors shadow-lg animate-pulse">
-                  🔍 결과 보기
-                </button>
-              ) : (
-                <div className="text-xs font-bold text-gray-400 pr-3 pl-1">{scored.length}건</div>
-              )}
             </div>
+            <div className="w-[1px] h-6 bg-gray-200"></div>
+            
+            <button onClick={resetFilter} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-gray-500">
+              <RotateCcw size={14}/>
+            </button>
+
+            {isChanged ? (
+              <button onClick={executeSearch} className="px-4 py-2 bg-indigo-600 text-white rounded-full font-black text-xs hover:bg-indigo-700 transition-colors shadow-lg animate-pulse">
+                🔍 결과 보기
+              </button>
+            ) : (
+              <div className="text-xs font-bold text-gray-400 pr-3 pl-1">{scored.length}건</div>
+            )}
           </div>
-        )}
+        </div>
         
         {showLevelUpModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
