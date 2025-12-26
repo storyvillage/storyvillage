@@ -1,8 +1,12 @@
 'use client';
 
+// 👇 [핵심 수정] 이 한 줄이 배포 에러를 막아줍니다! (동적 페이지 선언)
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Analytics } from '@vercel/analytics/react'; // 방문자 집계 도구
 import { 
   Search, Filter, RotateCcw, Sparkles, Dices, User, LogIn, LogOut, Ghost, PenTool, 
   ChevronDown, Zap, Map, Radar, X, SlidersHorizontal, Gift, Lock, Plus, Info, Trophy, PartyPopper, Crown
@@ -66,13 +70,11 @@ const SLIDER_CONFIG = [
   { key: 'growth', left: '👶 성장', right: '👑 완성', color: 'accent-yellow-600' },
 ];
 
-// 🔥 [수정] 실제 로직을 담은 내부 컴포넌트 (기존 Home)
 function StoryVillageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resultsRef = useRef<HTMLDivElement>(null);
   
-  // 초기 로딩 여부 체크
   const isInitialMount = useRef(true);
 
   // --- [상태 관리] ---
@@ -100,7 +102,6 @@ function StoryVillageContent() {
 
   const preset = useMemo(() => recommendPresetFromTags(uiTags), [uiTags]);
 
-  // URL 파라미터 동기화
   useEffect(() => {
     const tagsParam = searchParams.get('tags');
     const searchParam = searchParams.get('q');
@@ -133,7 +134,6 @@ function StoryVillageContent() {
 
     if (hasSliderParam) setIsSliderOpen(true);
 
-    // 페이지 최초 진입/뒤로가기 시에만 스크롤 이동
     if (isInitialMount.current) {
       if (newTags.length > 0 || newSearch || hasSliderParam || limitParam) {
         setTimeout(() => {
@@ -714,12 +714,15 @@ function StoryVillageContent() {
             </div>
           </div>
         )}
+
+        {/* [추가] 분석 도구 컴포넌트 삽입 */}
+        <Analytics />
       </div>
     </div>
   );
 }
 
-// 🔥 [수정] 배포 에러 방지용 껍데기
+// 배포 에러 방지용 껍데기
 export default function Home() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center font-bold text-gray-400">마을에 입장하는 중...</div>}>
