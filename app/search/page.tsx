@@ -32,6 +32,7 @@ function normalizeWork(row: any): Work {
     probability: Number(s.probability ?? row.admin_probability ?? 50),
     character: Number(s.character ?? row.admin_character ?? 50),
     growth: Number(s.growth ?? row.admin_growth ?? 50),
+    readability: Number(s.readability ?? row.admin_readability ?? 50),
   };
   
   return {
