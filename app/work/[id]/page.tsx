@@ -88,12 +88,21 @@ export default function WorkDetail() {
             readability: Number(s.readability ?? workData.admin_readability ?? 50),
         };
 
-        // 태그 안전 변환
+        // ✅ [수정] 태그 처리 로직 개선 (메인 페이지와 동일하게)
         if (typeof workData.tags === 'string') {
             try {
-                workData.tags = JSON.parse(workData.tags);
+                if (workData.tags.trim().startsWith('[')) {
+                    // JSON 형식
+                    workData.tags = JSON.parse(workData.tags);
+                } else if (workData.tags.includes(',')) {
+                    // 구버전 (쉼표 구분)
+                    workData.tags = workData.tags.split(',').map((t: string) => t.trim());
+                } else {
+                    // 신버전 (띄어쓰기 구분)
+                    workData.tags = workData.tags.split(' ').map((t: string) => t.trim());
+                }
             } catch {
-                workData.tags = workData.tags.split(',').map((t: string) => t.trim());
+                workData.tags = [];
             }
         }
         
@@ -286,7 +295,9 @@ export default function WorkDetail() {
 
   const badge = getBadgeStatus();
   
-  const dateObj = new Date(work.created_at || Date.now());
+  // ✅ [수정] release_date를 최우선으로, 없으면 created_at, 그것도 없으면 현재 날짜 사용
+  const targetDateStr = work.release_date || work.created_at || new Date().toISOString();
+  const dateObj = new Date(targetDateStr);
   const releaseYear = `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
 
   return (
