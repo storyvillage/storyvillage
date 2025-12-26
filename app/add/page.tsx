@@ -28,6 +28,7 @@ function AddWorkForm() {
   useEffect(() => { if (prefill.length) setTags(prefill); }, [prefill]);
 
   const statConfig = [
+    { key: 'readability', label: '📚 묵직함', label2: '📖 술술', color: 'accent-emerald-600' }, // 👈 추가됨!
     { key: 'cider', label: '🍠 고구마', label2: '🥤 사이다', color: 'accent-indigo-600' },
     { key: 'pace', label: '🐢 느림', label2: '⚡ 빠름', color: 'accent-blue-600' },
     { key: 'dark', label: '☀️ 힐링', label2: '🌑 피폐', color: 'accent-gray-600' },
@@ -50,14 +51,18 @@ function AddWorkForm() {
       cider: Math.round(taste.cider), pace: Math.round(taste.pace), mood: Math.round(taste.dark), 
       romance: Math.round(taste.romance), probability: Math.round(taste.probability),
       character: Math.round(taste.character), growth: Math.round(taste.growth),
+      readability: Math.round(taste.readability ?? 50), // 👈 추가됨!
     };
+    
     const payload: any = {
       title: title.trim(), author: author.trim(), platform: platform.trim(),
       work_type: 'webnovel', tags, status: 'pending', stats: statsJSON,
       admin_cider: Math.round(taste.cider), admin_pace: Math.round(taste.pace),
       admin_dark: Math.round(taste.dark), admin_romance: Math.round(taste.romance),
       admin_probability: Math.round(taste.probability), admin_character: Math.round(taste.character),
-      admin_growth: Math.round(taste.growth), created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      admin_growth: Math.round(taste.growth),
+      admin_readability: Math.round(taste.readability ?? 50), // 👈 추가됨!
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from('works').insert(payload);
     setLoading(false);

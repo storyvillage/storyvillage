@@ -24,8 +24,9 @@ export default function EditWorkPage() {
 
   // 관리자용 7대 성분
   const [adminTaste, setAdminTaste] = useState<Taste>({
-    cider: 50, pace: 50, dark: 50, romance: 50, probability: 50, character: 50, growth: 50
-  });
+    cider: 50, pace: 50, dark: 50, romance: 50, probability: 50, character: 50, growth: 50,
+    readability: 50  // ✅ 이 줄을 꼭 넣어주세요!
+    });
 
   // 성분 설정
   const statConfig = [
