@@ -38,16 +38,24 @@ type Work = {
 type RadarItem = { id: number; tags: string[]; search_count: number; zero_rate: number; radar_score: number; };
 type DailyQuest = { id: number; date: string; tags: string[]; sliders: any; status: string; };
 
+// 👇 [수정] normalizeWork 함수 전체 교체
 function normalizeWork(row: any): Work {
-  let rawTags: any[] = [];
+  let rawTags: string[] = [];
+
+  // 1. 태그 처리 로직 개선 (쉼표뿐만 아니라 공백도 처리)
   if (Array.isArray(row?.tags)) {
     rawTags = row.tags;
   } else if (typeof row?.tags === 'string') {
     try {
       if (row.tags.trim().startsWith('[')) {
+        // JSON 형식인 경우
         rawTags = JSON.parse(row.tags);
-      } else {
+      } else if (row.tags.includes(',')) {
+        // 쉼표로 구분된 경우 (구버전)
         rawTags = row.tags.split(',').map((s: string) => s.trim());
+      } else {
+        // [New] 띄어쓰기로 구분된 경우 (#현판 #헌터물)
+        rawTags = row.tags.split(' ').map((s: string) => s.trim());
       }
     } catch {
       rawTags = [];
@@ -58,21 +66,38 @@ function normalizeWork(row: any): Work {
   const s = row.stats || {};
   
   const adminTaste: Taste = {
-    cider: Number(s.cider ?? row.admin_cider ?? 50), pace: Number(s.pace ?? row.admin_pace ?? 50),
-    dark: Number(s.mood ?? row.admin_dark ?? 50), romance: Number(s.romance ?? row.admin_romance ?? 50),
-    probability: Number(s.probability ?? row.admin_probability ?? 50), character: Number(s.character ?? row.admin_character ?? 50),
+    cider: Number(s.cider ?? row.admin_cider ?? 50), 
+    pace: Number(s.pace ?? row.admin_pace ?? 50),
+    dark: Number(s.mood ?? row.admin_dark ?? 50), 
+    romance: Number(s.romance ?? row.admin_romance ?? 50),
+    probability: Number(s.probability ?? row.admin_probability ?? 50), 
+    character: Number(s.character ?? row.admin_character ?? 50),
     growth: Number(s.growth ?? row.admin_growth ?? 50),
     readability: Number(s.readability ?? row.admin_readability ?? 50),
   };
   
   const nVotes = Number(row?.n_votes ?? 0);
   const avgDiff = Number(row?.avg_diff ?? 0);
-  const dateObj = new Date(row.created_at || Date.now());
+
+  // 👇 [핵심 수정] release_date가 있으면 그걸 쓰고, 없으면 created_at을 씀
+  // DB에서 가져온 날짜 문자열 ('2016-07-25')을 바로 날짜 객체로 변환
+  const targetDateStr = row.release_date || row.created_at || new Date().toISOString();
+  const dateObj = new Date(targetDateStr);
   
   return {
-    id: row?.id ?? crypto.randomUUID(), title: String(row?.title ?? '제목 없음'), author: row?.author ?? '',
-    tags, adminTaste, nVotes, avgDiff, badge: (row?.badge as any) ?? computeBadge(nVotes, avgDiff),
-    createdAt: row?.created_at, updatedAt: row?.updated_at,
+    id: row?.id ?? crypto.randomUUID(), 
+    title: String(row?.title ?? '제목 없음'), 
+    author: row?.author ?? '',
+    // DB의 platform 컬럼이 삭제되었으므로, platform_link 유무로 체크하거나 빈값 처리
+    platform: row?.platform_link ? 'Link' : undefined, 
+    tags, 
+    adminTaste, 
+    nVotes, 
+    avgDiff, 
+    badge: (row?.badge as any) ?? computeBadge(nVotes, avgDiff),
+    createdAt: row?.created_at, 
+    updatedAt: row?.updated_at,
+    // 연도.월 표시 (예: 2016.07)
     releaseYear: `${dateObj.getFullYear()}.${String(dateObj.getMonth() + 1).padStart(2, '0')}`
   };
 }

@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { 
-  ChevronLeft, Share2, Heart, BookOpen, 
+  ChevronLeft, Share2, Heart, BookOpen, BookOpenText,
   BarChart3, Monitor, Send, User, Plus, X, Copy, MessageCircle,
   AlertCircle, CheckCircle2, Tag, PenLine, Search, Sparkles
 } from 'lucide-react';
@@ -45,14 +45,14 @@ export default function WorkDetail() {
   const [myVote, setMyVote] = useState<any>(null);       
   const [isVoting, setIsVoting] = useState(false);       
   
-  // ✅ [수정] readability 추가
+  // ✅ readability 추가된 상태값
   const [inputStats, setInputStats] = useState<Taste>({         
     cider: 50, pace: 50, dark: 50, romance: 50, 
     probability: 50, character: 50, growth: 50, readability: 50 
   });
   const [reviewText, setReviewText] = useState(''); 
 
-  // ✅ [수정] 8대 성분 설정 (가독성 추가)
+  // ✅ 8대 성분 설정 (가독성 포함)
   const statConfig = [
     { key: 'readability', label: '묵직함 📚', label2: '📖 술술읽힘', color: 'bg-emerald-500', accent: 'accent-emerald-500' },
     { key: 'cider', label: '고구마 🍠', label2: '🥤 사이다', color: 'bg-indigo-500', accent: 'accent-indigo-500' },
@@ -75,7 +75,7 @@ export default function WorkDetail() {
     // 1-1. 작품 정보
     const { data: workData } = await supabase.from('works').select('*').eq('id', id).single();
     if (workData) {
-        // ✅ [수정] 8대 성분 매핑
+        // ✅ 8대 성분 매핑
         const s = workData.stats || {};
         workData.adminTaste = {
             cider: Number(s.cider ?? workData.admin_cider ?? 50),
@@ -85,7 +85,7 @@ export default function WorkDetail() {
             probability: Number(s.probability ?? workData.admin_probability ?? 50),
             character: Number(s.character ?? workData.admin_character ?? 50),
             growth: Number(s.growth ?? workData.admin_growth ?? 50),
-            readability: Number(s.readability ?? workData.admin_readability ?? 50), // 신규
+            readability: Number(s.readability ?? workData.admin_readability ?? 50),
         };
 
         // 태그 안전 변환
@@ -131,7 +131,7 @@ export default function WorkDetail() {
               probability: my.stats.probability ?? 50,
               character: my.stats.character ?? 50,
               growth: my.stats.growth ?? 50,
-              readability: my.stats.readability ?? 50, // 신규
+              readability: my.stats.readability ?? 50,
           }); 
         }
       }
@@ -155,7 +155,6 @@ export default function WorkDetail() {
       setUserStats(null);
       return;
     }
-    // ✅ [수정] readability 키 추가
     const keys = ['cider', 'pace', 'dark', 'romance', 'probability', 'character', 'growth', 'readability'];
     const result: any = {};
 
@@ -299,7 +298,7 @@ export default function WorkDetail() {
           <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-all cursor-pointer"><ChevronLeft size={24} /></button>
           <div className="flex items-center gap-1">
             
-            {/* ✅ [수정] 관리자 버튼 (레벨 9 이상이면 보임) */}
+            {/* ✅ 관리자 버튼 (레벨 9 이상만) */}
             {profile && profile.level >= 9 && (
                 <button onClick={() => router.push(`/work/${id}/edit`)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all cursor-pointer" title="관리자 수정">
                 <PenLine size={20} />
@@ -313,7 +312,7 @@ export default function WorkDetail() {
           </div>
         </header>
 
-        {/* ✅ 상단 정보 섹션 */}
+        {/* ✅ 상단 Hero 섹션 */}
         <section className="relative bg-[#0f172a] text-white px-6 pt-8 pb-10 overflow-hidden">
              {/* 배경 장식 */}
              <div className="absolute top-[-20%] left-[-10%] w-[300px] h-[300px] bg-purple-600/30 rounded-full blur-[80px] pointer-events-none"></div>
@@ -344,20 +343,19 @@ export default function WorkDetail() {
           
           {/* 1. 태그 섹션 */}
           <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-            <div className="flex justify-between items-center mb-4"> {/* mb-3 -> mb-4 */}
+            <div className="flex justify-between items-center mb-4">
                <h3 className="font-black text-sm text-gray-500 flex items-center gap-1.5 uppercase tracking-wider">
-                 <Tag size={16}/> Keywords {/* 아이콘 14 -> 16 */}
+                 <Tag size={16}/> Keywords
                </h3>
                {!isAddingTag && (
-                 <button onClick={() => setIsAddingTag(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"> {/* text-[10px] -> text-xs */}
-                   <Plus size={12}/> 태그 추가 {/* 아이콘 10 -> 12 */}
+                 <button onClick={() => setIsAddingTag(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                   <Plus size={12}/> 태그 추가
                  </button>
                )}
             </div>
 
-            <div className="flex flex-wrap gap-2.5 mb-4"> {/* gap-2 -> gap-2.5 */}
+            <div className="flex flex-wrap gap-2.5 mb-4">
               {work.tags?.map((tag: string) => (
-                // text-xs -> text-sm
                 <span key={tag} className="px-3.5 py-2 rounded-lg text-sm font-bold bg-gray-100 text-gray-600 cursor-default">
                   {tag}
                 </span>
@@ -376,7 +374,7 @@ export default function WorkDetail() {
                   <span className="text-sm font-bold text-gray-900">추가할 태그를 선택하세요</span>
                   <button onClick={() => setIsAddingTag(false)} className="text-gray-400 hover:text-gray-600"><X size={16}/></button>
                 </div>
-                <div className="max-h-48 overflow-y-auto space-y-4 pr-2 scrollbar-thin"> {/* 높이 증가 */}
+                <div className="max-h-48 overflow-y-auto space-y-4 pr-2 scrollbar-thin">
                   <div>
                       <h4 className="text-xs font-bold text-gray-400 mb-2">🔥 핵심 재미</h4>
                       <div className="flex flex-wrap gap-2">
@@ -414,8 +412,23 @@ export default function WorkDetail() {
             )}
           </div>
 
+          {/* ✅ 1.5 줄거리 섹션 (새로 추가됨) */}
+          <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
+             <h3 className="font-black text-sm text-gray-500 flex items-center gap-1.5 uppercase tracking-wider mb-3">
+               <BookOpenText size={16}/> Story Summary
+             </h3>
+             <div className="text-gray-700 text-sm font-medium leading-relaxed whitespace-pre-wrap">
+               {work.description ? work.description : (
+                 <div className="py-4 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                   <p>아직 줄거리가 등록되지 않았습니다. 😢</p>
+                   <p className="text-xs mt-1">작품을 아신다면 제보해주세요!</p>
+                 </div>
+               )}
+             </div>
+          </div>
+
           {/* 2. 성분 분석표 */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm"> {/* p-5 -> p-6 */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
              <div className="flex justify-between items-center mb-6">
               <h3 className="font-black text-lg text-gray-900 flex items-center gap-2">
                 <BarChart3 size={20} className="text-indigo-500" /> 성분 분석
@@ -423,14 +436,12 @@ export default function WorkDetail() {
               <span className="text-xs text-gray-400 font-bold bg-gray-50 px-2.5 py-1 rounded-md">참여자 {userVotes.length}명</span>
             </div>
 
-            <div className="space-y-5"> {/* 간격 넓힘 */}
+            <div className="space-y-5">
               {statConfig.map((item) => (
                 <div key={item.key}>
                   <div className="flex justify-between items-end mb-2">
-                    {/* 글자 크기: text-[11px] -> text-sm */}
                     <span className="text-sm font-bold text-gray-600">{item.label}</span>
                     <div className="text-right">
-                      {/* 점수 크기: text-xs -> text-base */}
                       <span className="text-base font-black text-gray-900 mr-1.5">
                         {work.adminTaste?.[item.key] ?? 50}% 
                       </span>
@@ -443,7 +454,6 @@ export default function WorkDetail() {
                     <span className="text-sm font-bold text-gray-600">{item.label2}</span>
                   </div>
 
-                  {/* 게이지 두께: h-1.5 -> h-2 */}
                   <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div 
                       className={`absolute top-0 left-0 h-full ${item.color} rounded-full`} 
@@ -504,7 +514,6 @@ export default function WorkDetail() {
                     <span className="font-black text-gray-900 text-sm">{comment.author_nickname}</span>
                     <span className="text-xs text-gray-300 font-bold">{new Date(comment.created_at).toLocaleDateString()}</span>
                   </div>
-                  {/* 댓글 본문: text-xs -> text-sm */}
                   <p className="text-gray-700 font-bold text-sm leading-relaxed">{comment.content}</p>
                 </div>
               ))}
