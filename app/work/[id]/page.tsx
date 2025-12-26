@@ -298,11 +298,14 @@ export default function WorkDetail() {
         <header className="px-6 py-4 flex justify-between items-center sticky top-0 bg-white/95 backdrop-blur z-50 border-b border-gray-50">
           <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-all cursor-pointer"><ChevronLeft size={24} /></button>
           <div className="flex items-center gap-1">
-            {user?.email === 'rudxo513@gmail.com' && (
-            <button onClick={() => router.push(`/work/${id}/edit`)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all cursor-pointer">
-              <PenLine size={20} />
-            </button>
+            
+            {/* ✅ [수정] 관리자 버튼 (레벨 9 이상이면 보임) */}
+            {profile && profile.level >= 9 && (
+                <button onClick={() => router.push(`/work/${id}/edit`)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all cursor-pointer" title="관리자 수정">
+                <PenLine size={20} />
+                </button>
             )}
+
             <button onClick={handleTogglePick} className={`p-2 rounded-full transition-all cursor-pointer ${isLiked ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:bg-gray-100'}`}>
                 <Heart fill={isLiked ? "currentColor" : "none"} size={22} />
             </button>
