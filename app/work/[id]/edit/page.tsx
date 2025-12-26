@@ -70,6 +70,7 @@ export default function EditWorkPage() {
         probability: s.probability ?? data.admin_probability ?? 50,
         character: s.character ?? data.admin_character ?? 50,
         growth: s.growth ?? data.admin_growth ?? 50,
+        readability: s.readability ?? data.admin_readability ?? 50,
     });
 
     setLoading(false);
